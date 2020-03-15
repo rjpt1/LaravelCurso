@@ -44,7 +44,7 @@ class VentaController extends Controller
                 'from'         => $ventas->firstItem(),
                 'to'           => $ventas->lastItem(),
             ],
-            'ingresos' => $ventas
+            'ventas' => $ventas
         ];
     }
     public function obtenerCabecera(Request $request){
