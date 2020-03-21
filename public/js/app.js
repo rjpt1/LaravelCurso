@@ -46394,6 +46394,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 //
 //
 //
+//
+//
 
 
 /* harmony default export */ __webpack_exports__["default"] = ({
@@ -46437,7 +46439,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
             articulo: '',
             precio: 0,
             cantidad: 0,
-            descuento: 0
+            descuento: 0,
+            stock: 0
         };
     },
 
@@ -46474,7 +46477,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         calcularTotal: function calcularTotal() {
             var resultado = 0.0;
             for (var i = 0; i < this.arrayDetalle.length; i++) {
-                resultado = resultado + this.arrayDetalle[i].precio * this.arrayDetalle[i].cantidad;
+                resultado = resultado + (this.arrayDetalle[i].precio * this.arrayDetalle[i].cantidad - this.arrayDetalle[i].descuento);
             }
             return resultado;
         }
@@ -46512,7 +46515,7 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
         },
         buscarArticulo: function buscarArticulo() {
             var me = this;
-            var url = '/articulo/buscarArticulo?filtro=' + me.codigo;
+            var url = '/articulo/buscarArticuloVenta?filtro=' + me.codigo;
 
             axios.get(url).then(function (response) {
                 var respuesta = response.data;
@@ -46521,6 +46524,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
                 if (me.arrayArticulo.length > 0) {
                     me.articulo = me.arrayArticulo[0]['nombre'];
                     me.idarticulo = me.arrayArticulo[0]['id'];
+                    me.precio = me.arrayArticulo[0]['precio_venta'];
+                    me.stock = me.arrayArticulo[0]['stock'];
                 } else {
                     me.articulo = 'No existe artículo';
                     me.idarticulo = 0;
@@ -46559,17 +46564,29 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
                         text: 'Ese artículo ya se encuentra agregado!'
                     });
                 } else {
-                    me.arrayDetalle.push({
-                        idarticulo: me.idarticulo,
-                        articulo: me.articulo,
-                        cantidad: me.cantidad,
-                        precio: me.precio
-                    });
-                    me.codigo = "";
-                    me.idarticulo = 0;
-                    me.articulo = "";
-                    me.cantidad = 0;
-                    me.precio = 0;
+                    if (me.cantidad > me.stock) {
+                        swal({
+                            type: 'error',
+                            title: 'Error...',
+                            text: 'No hay stock disponible'
+                        });
+                    } else {
+                        me.arrayDetalle.push({
+                            idarticulo: me.idarticulo,
+                            articulo: me.articulo,
+                            cantidad: me.cantidad,
+                            precio: me.precio,
+                            descuento: me.descuento,
+                            stock: me.stock
+                        });
+                        me.codigo = "";
+                        me.idarticulo = 0;
+                        me.articulo = "";
+                        me.cantidad = 0;
+                        me.precio = 0;
+                        me.descuento = 0;
+                        me.stock = 0;
+                    }
                 }
             }
         },
@@ -46588,13 +46605,15 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
                     idarticulo: data['id'],
                     articulo: data['nombre'],
                     cantidad: 1,
-                    precio: 1
+                    precio: data['precio_venta'],
+                    descuento: 0,
+                    stock: data['stock']
                 });
             }
         },
         listarArticulo: function listarArticulo(buscar, criterio) {
             var me = this;
-            var url = '/articulo/listarArticulo?buscar=' + buscar + '&criterio=' + criterio;
+            var url = '/articulo/listarArticuloVenta?buscar=' + buscar + '&criterio=' + criterio;
             axios.get(url).then(function (response) {
                 var respuesta = response.data;
                 me.arrayArticulo = respuesta.articulos.data;
@@ -46602,15 +46621,15 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
                 console.log(error);
             });
         },
-        registrarIngreso: function registrarIngreso() {
-            if (this.validarIngreso()) {
+        registrarVenta: function registrarVenta() {
+            if (this.validarVenta()) {
                 return;
             }
 
             var me = this;
 
-            axios.post('/ingreso/registrar', {
-                'idproveedor': this.idproveedor,
+            axios.post('/venta/registrar', {
+                'idcliente': this.idcliente,
                 'tipo_comprobante': this.tipo_comprobante,
                 'serie_comprobante': this.serie_comprobante,
                 'num_comprobante': this.num_comprobante,
@@ -46620,8 +46639,8 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
 
             }).then(function (response) {
                 me.listado = 1;
-                me.listarIngreso(1, '', 'num_comprobante');
-                me.idproveedor = 0;
+                me.listarVenta(1, '', 'num_comprobante');
+                me.idcliente = 0;
                 me.tipo_comprobante = 'BOLETA';
                 me.serie_comprobante = '';
                 me.num_comprobante = '';
@@ -46631,24 +46650,35 @@ Object.defineProperty(__webpack_exports__, "__esModule", { value: true });
                 me.articulo = '';
                 me.cantidad = 0;
                 me.precio = 0;
+                me.stock = 0;
+                me.codigo = '';
+                me.descuento = 0;
                 me.arrayDetalle = [];
             }).catch(function (error) {
                 console.log(error);
             });
         },
-        validarIngreso: function validarIngreso() {
-            this.errorIngreso = 0;
-            this.errorMostrarMsjIngreso = [];
+        validarVenta: function validarVenta() {
+            var me = this;
+            me.errorVenta = 0;
+            me.errorMostrarMsjVenta = [];
+            var art;
+            me.arrayDetalle.map(function (x) {
+                if (x.cantidad > x.stock) {
+                    art = x.articulo + ' con stock insuficiente';
+                    me.errorMostrarMsjVenta.push(art);
+                }
+            });
 
-            if (this.idproveedor == 0) this.errorMostrarMsjIngreso.push("Seleccione un Proveedor");
-            if (this.tipo_comprobante == 0) this.errorMostrarMsjIngreso.push("Seleccione el comprobante");
-            if (!this.num_comprobante) this.errorMostrarMsjIngreso.push("Ingrese el número de comprobante");
-            if (!this.impuesto) this.errorMostrarMsjIngreso.push("Ingrese el impuesto de compra");
-            if (this.arrayDetalle.length <= 0) this.errorMostrarMsjIngreso.push("Ingrese detalles");
+            if (me.idcliente == 0) me.errorMostrarMsjVenta.push("Seleccione un Cliente");
+            if (me.tipo_comprobante == 0) me.errorMostrarMsjVenta.push("Seleccione el comprobante");
+            if (!me.num_comprobante) me.errorMostrarMsjVenta.push("Ingrese el número de comprobante");
+            if (!me.impuesto) me.errorMostrarMsjVenta.push("Ingrese el impuesto de compra");
+            if (me.arrayDetalle.length <= 0) me.errorMostrarMsjVenta.push("Ingrese detalles");
 
-            if (this.errorMostrarMsjIngreso.length) this.errorIngreso = 1;
+            if (me.errorMostrarMsjVenta.length) me.errorVenta = 1;
 
-            return this.errorIngreso;
+            return me.errorVenta;
         },
         mostrarDetalle: function mostrarDetalle() {
             var me = this;
@@ -47601,6 +47631,31 @@ var render = function() {
                                         ]),
                                         _vm._v(" "),
                                         _c("td", [
+                                          _c(
+                                            "span",
+                                            {
+                                              directives: [
+                                                {
+                                                  name: "show",
+                                                  rawName: "v-show",
+                                                  value:
+                                                    detalle.cantidad >
+                                                    detalle.stock,
+                                                  expression:
+                                                    "detalle.cantidad > detalle.stock"
+                                                }
+                                              ],
+                                              staticStyle: { color: "red" }
+                                            },
+                                            [
+                                              _vm._v(
+                                                "Stock: " +
+                                                  _vm._s(detalle.stock) +
+                                                  " "
+                                              )
+                                            ]
+                                          ),
+                                          _vm._v(" "),
                                           _c("input", {
                                             directives: [
                                               {
@@ -47631,6 +47686,26 @@ var render = function() {
                                         ]),
                                         _vm._v(" "),
                                         _c("td", [
+                                          _c(
+                                            "span",
+                                            {
+                                              directives: [
+                                                {
+                                                  name: "show",
+                                                  rawName: "v-show",
+                                                  value:
+                                                    detalle.descuento >
+                                                    detalle.stock *
+                                                      detalle.cantidad,
+                                                  expression:
+                                                    "detalle.descuento > (detalle.stock*detalle.cantidad)"
+                                                }
+                                              ],
+                                              staticStyle: { color: "red" }
+                                            },
+                                            [_vm._v("Descuento superior")]
+                                          ),
+                                          _vm._v(" "),
                                           _c("input", {
                                             directives: [
                                               {
@@ -47665,7 +47740,8 @@ var render = function() {
                                             "\n                                        " +
                                               _vm._s(
                                                 detalle.precio *
-                                                  detalle.cantidad
+                                                  detalle.cantidad -
+                                                  detalle.descuento
                                               ) +
                                               "\n                                    "
                                           )
