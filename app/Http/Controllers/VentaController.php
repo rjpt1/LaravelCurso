@@ -52,7 +52,7 @@ class VentaController extends Controller
 
         $id = $request->id;
         $venta = Venta::join('personas','ventas.idcliente','=','personas.id')
-        ->join('users','venta.idusuario','=','users.id')
+        ->join('users','ventas.idusuario','=','users.id')
         ->select('ventas.id','ventas.tipo_comprobante','ventas.serie_comprobante',
         'ventas.num_comprobante','ventas.fecha_hora','ventas.impuesto','ventas.total',
         'ventas.estado','personas.nombre','users.usuario')

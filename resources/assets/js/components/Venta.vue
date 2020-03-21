@@ -229,7 +229,7 @@
                                     <tbody v-else>
                                         <tr>
                                             <td colspan="6">
-                                                NO hay artículos agregados
+                                                NO hay artículos agregados 1
                                             </td>
                                         </tr>
                                     </tbody>                                    
@@ -251,8 +251,8 @@
                         <div class="form-group row border">
                             <div class="col-md-9">
                                 <div class="form-group">
-                                    <label for="">Proveedor</label>
-                                    <p v-text="proveedor"></p>
+                                    <label for="">Cliente</label>
+                                    <p v-text="cliente"></p>
                                 </div>
                             </div>
                             <div class="col-md-3">
@@ -286,6 +286,7 @@
                                             <th>Artículo</th>
                                             <th>Precio</th>
                                             <th>Cantidad</th>
+                                            <th>Descuento</th>
                                             <th>Subtotal</th>
                                         </tr>
                                     </thead>
@@ -297,27 +298,29 @@
                                             </td>
                                             <td v-text="detalle.cantidad">
                                             </td>
+                                            <td v-text="detalle.descuento">
+                                            </td>
                                             <td>
-                                                {{detalle.precio*detalle.cantidad}}
+                                                {{detalle.precio*detalle.cantidad-detalle.descuento}}
                                             </td>
                                         </tr>
                                         <tr style="background-color: #CEECF5;">
-                                            <td colspan="3" align="right"><strong>Total Parcial:</strong></td>
+                                            <td colspan="4" align="right"><strong>Total Parcial:</strong></td>
                                             <td>$ {{totalParcial=(total-totalImpuesto).toFixed(2)}}</td>
                                         </tr>
                                         <tr style="background-color: #CEECF5;">
-                                            <td colspan="3" align="right"><strong>Total Impuesto:</strong></td>
+                                            <td colspan="4" align="right"><strong>Total Impuesto:</strong></td>
                                             <td>$ {{totalImpuesto=((total*impuesto)).toFixed(2)}}</td>
                                         </tr>
                                         <tr style="background-color: #CEECF5;">
-                                            <td colspan="3" align="right"><strong>Total Neto:</strong></td>
+                                            <td colspan="4" align="right"><strong>Total Neto:</strong></td>
                                             <td>$ {{total}}</td>
                                         </tr>
                                     </tbody>
                                     <tbody v-else>
                                         <tr>
-                                            <td colspan="4">
-                                                NO hay artículos agregados
+                                            <td colspan="5">
+                                                NO hay artículos agregados 2
                                             </td>
                                         </tr>
                                     </tbody>                                    
@@ -728,24 +731,24 @@
             ocultarDetalle(){
                 this.listado=1;
             },
-            verIngreso(id){
+            verVenta(id){
                 let me=this;
                 me.listado=2;
                 
                 //Obtener los datos del ingreso
-                var arrayIngresoT=[];
-                var url= '/ingreso/obtenerCabecera?id=' + id;
+                var arrayVentaT=[];
+                var url= '/venta/obtenerCabecera?id=' + id;
                 
                 axios.get(url).then(function (response) {
                     var respuesta= response.data;
-                    arrayIngresoT = respuesta.ingreso;
+                    arrayVentaT = respuesta.venta;
 
-                    me.proveedor = arrayIngresoT[0]['nombre'];
-                    me.tipo_comprobante=arrayIngresoT[0]['tipo_comprobante'];
-                    me.serie_comprobante=arrayIngresoT[0]['serie_comprobante'];
-                    me.num_comprobante=arrayIngresoT[0]['num_comprobante'];
-                    me.impuesto=arrayIngresoT[0]['impuesto'];
-                    me.total=arrayIngresoT[0]['total'];
+                    me.cliente = arrayVentaT[0]['nombre'];
+                    me.tipo_comprobante=arrayVentaT[0]['tipo_comprobante'];
+                    me.serie_comprobante=arrayVentaT[0]['serie_comprobante'];
+                    me.num_comprobante=arrayVentaT[0]['num_comprobante'];
+                    me.impuesto=arrayVentaT[0]['impuesto'];
+                    me.total=arrayVentaT[0]['total'];
                 })
                 .catch(function (error) {
                     console.log(error);
@@ -772,9 +775,9 @@
                 this.modal = 1;
                 this.tituloModal = 'Seleccione uno o varios artículos';
             },
-            desactivarIngreso(id){
+            desactivarVenta(id){
                swal({
-                title: 'Esta seguro de anular este ingreso?',
+                title: 'Esta seguro de anular esta venta?',
                 type: 'warning',
                 showCancelButton: true,
                 confirmButtonColor: '#3085d6',
@@ -789,13 +792,13 @@
                 if (result.value) {
                     let me = this;
 
-                    axios.put('/ingreso/desactivar',{
+                    axios.put('/venta/desactivar',{
                         'id': id
                     }).then(function (response) {
-                        me.listarIngreso(1,'','num_comprobante');
+                        me.listarVenta(1,'','num_comprobante');
                         swal(
                         'Anulado!',
-                        'El ingreso ha sido anulado con éxito.',
+                        'La venta ha sido anulada con éxito.',
                         'success'
                         )
                     }).catch(function (error) {
